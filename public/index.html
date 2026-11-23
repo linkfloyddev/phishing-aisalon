@@ -368,20 +368,24 @@
       pwToggle.setAttribute("aria-label", showPw ? "Nascondi password" : "Mostra password");
     });
 
-    // Invia SOLO il segnale "+1". Nessun body, nessun dato utente.
+    // Segnale anonimo "+1" al contatore. Nessun body, nessun dato utente.
     // keepalive permette alla richiesta di completarsi anche cambiando vista.
-    function sendHit() {
+    function ping(path) {
       try {
-        fetch(COUNTER_URL + "/hit", {
+        fetch(COUNTER_URL + path, {
           method: "POST",
           cache: "no-store",
           keepalive: true
-          // Nessun header, nessun body: non trasmettiamo nulla oltre al colpo.
+          // Nessun header custom, nessun body: non trasmettiamo nulla oltre al colpo.
         }).catch(function () { /* ignora: il conteggio e' best-effort */ });
       } catch (e) {
         /* mai bloccare l'esperienza utente per un errore di rete */
       }
     }
+
+    // All'apertura del portale: +1 a "views" (quante persone sono atterrate qui).
+    // Same-origin: parte dalla pagina, quindi supera il guard del Worker.
+    ping("/view");
 
     form.addEventListener("submit", function (ev) {
       ev.preventDefault(); // le credenziali non vengono MAI inviate
@@ -395,8 +399,8 @@
       // I valori dei campi vengono scartati: non li leggiamo, non li salviamo.
       btn.disabled = true;
 
-      // Unica chiamata di rete: il "+1" anonimo.
-      sendHit();
+      // Unica chiamata di rete al submit: il "+1" anonimo a "hits".
+      ping("/hit");
 
       // Scarta immediatamente le credenziali dai campi.
       form.reset();

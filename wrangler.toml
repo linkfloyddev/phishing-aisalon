@@ -25,6 +25,7 @@ routes = [
 # arrivano al codice del Worker in worker.js.
 [assets]
 directory = "./public"
+binding = "ASSETS"
 
 # Il contatore globale e' tenuto da un Durable Object (stato atomico e consistente:
 # l'incremento non perde colpi nemmeno con molte richieste simultanee).

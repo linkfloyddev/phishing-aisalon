@@ -129,7 +129,7 @@
   <div class="count" id="count" aria-live="polite">—</div>
 
   <div class="caption">persone hanno inserito le proprie credenziali</div>
-  <div class="sub">su una rete WiFi che non avevano mai verificato</div>
+  <div class="sub" id="sub">su una rete WiFi che non avevano mai verificato</div>
 
   <div class="status" id="status">
     <span class="dot" aria-hidden="true"></span>
@@ -150,6 +150,7 @@
     var POLL_MS = 2500;
 
     var elCount  = document.getElementById("count");
+    var elSub    = document.getElementById("sub");
     var elStatus = document.getElementById("status");
     var elText   = document.getElementById("status-text");
 
@@ -160,10 +161,15 @@
       elText.textContent = text;
     }
 
-    function render(n) {
-      if (n === current) return;
-      current = n;
-      elCount.textContent = String(n);
+    function render(hits, views) {
+      // Sottotitolo: contesto con il numero di persone che hanno aperto il portale.
+      elSub.textContent = views > 0
+        ? "su " + views + " che hanno aperto il portale · rete WiFi mai verificata"
+        : "su una rete WiFi che non avevano mai verificato";
+
+      if (hits === current) return;
+      current = hits;
+      elCount.textContent = String(hits);
       // Micro-animazione a ogni cambio, per far "scattare" il numero sul palco.
       elCount.classList.remove("bump");
       void elCount.offsetWidth; // forza il reflow per riavviare l'animazione
@@ -177,7 +183,9 @@
           return r.json();
         })
         .then(function (data) {
-          render(typeof data.count === "number" ? data.count : 0);
+          var hits  = typeof data.hits  === "number" ? data.hits  : 0;
+          var views = typeof data.views === "number" ? data.views : 0;
+          render(hits, views);
           setStatus("", "In diretta");
         })
         .catch(function () {
