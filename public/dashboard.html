@@ -141,8 +141,11 @@
     "use strict";
 
     // === CONFIGURAZIONE ===
-    // Stesso URL della Worker usato in index.html (senza slash finale).
-    var COUNTER_URL = "https://REPLACE-WITH-YOUR-WORKER.workers.dev";
+    // Stringa vuota = stessa origine (consigliato): il polling va a /count sullo
+    // stesso progetto Cloudflare. Imposta un URL assoluto solo se apri questa
+    // pagina da un'origine diversa dal contatore (es. file locale sul portatile
+    // del palco puntato al contatore live): "https://aisalon.linkfloyd.top".
+    var COUNTER_URL = "";
 
     var POLL_MS = 2500;
 

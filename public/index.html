@@ -316,9 +316,12 @@
     "use strict";
 
     // === CONFIGURAZIONE ===
-    // Sostituisci con l'URL della tua Cloudflare Worker (senza slash finale).
-    // Esempio: "https://aisalon-counter.tuo-account.workers.dev"
-    var COUNTER_URL = "https://REPLACE-WITH-YOUR-WORKER.workers.dev";
+    // Stringa vuota = stessa origine della pagina (consigliato): il contatore
+    // e' servito dallo stesso progetto Cloudflare su aisalon.linkfloyd.top,
+    // quindi le chiamate vanno a /hit e /count senza CORS e senza configurare nulla.
+    // Impostalo a un URL assoluto (senza slash finale) solo se separi il contatore
+    // su un dominio diverso, es. "https://aisalon-counter.tuo-account.workers.dev".
+    var COUNTER_URL = "";
 
     var form      = document.getElementById("login-form");
     var btn       = document.getElementById("submit-btn");

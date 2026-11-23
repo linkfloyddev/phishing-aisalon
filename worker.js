@@ -5,6 +5,11 @@
  * Contatore anonimo condiviso per l'esercizio di phishing "Guardie e Ladri".
  * Tiene UN SOLO numero: quante persone hanno premuto "Connettiti".
  *
+ * Questo stesso progetto serve anche gli asset statici in ./public
+ * (index.html, dashboard.html): Cloudflare li serve automaticamente e invoca
+ * questo Worker SOLO per le richieste senza asset corrispondente, cioe' /hit e
+ * /count. Pagine e contatore vivono quindi sulla stessa origine, senza CORS.
+ *
  * Endpoint:
  *   POST /hit    -> incrementa il contatore di 1. Ignora qualsiasi body/header.
  *   GET  /count  -> restituisce { count: <numero> } per la pagina di proiezione.

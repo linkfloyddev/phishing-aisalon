@@ -1,13 +1,33 @@
 # Simulazione di security awareness. Nessun dato personale raccolto, salvato o trasmesso.
 # Conforme per design (nessun trattamento di dati personali).
 #
-# Configurazione d'esempio per la Cloudflare Worker del contatore anonimo.
+# Progetto Cloudflare UNICO (Worker + asset statici) per l'AI Salon.
+# Lo stesso deploy serve:
+#   - gli asset statici in ./public  -> index.html, dashboard.html
+#   - gli endpoint del contatore     -> POST /hit, GET /count (nel Worker)
+# Tutto sulla stessa origine: aisalon.linkfloyd.top. Nessun CORS da configurare.
 
-name = "aisalon-counter"
+name = "aisalon"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
-# Il contatore globale e' tenuto da un Durable Object (stato atomico e consistente).
+# Dominio personalizzato: crea DNS + certificato per aisalon.linkfloyd.top.
+# Richiede che la zona linkfloyd.top sia nel tuo account Cloudflare.
+# In alternativa puoi aggiungere il dominio dalla dashboard (vedi README).
+# NB: questa chiave top-level deve stare PRIMA di qualsiasi tabella [..].
+routes = [
+  { pattern = "aisalon.linkfloyd.top", custom_domain = true }
+]
+
+# Asset statici: Cloudflare serve automaticamente i file di ./public.
+# Una richiesta che corrisponde a un file (es. "/", "/dashboard") viene servita
+# come asset; solo le richieste senza asset corrispondente (/hit, /count)
+# arrivano al codice del Worker in worker.js.
+[assets]
+directory = "./public"
+
+# Il contatore globale e' tenuto da un Durable Object (stato atomico e consistente:
+# l'incremento non perde colpi nemmeno con molte richieste simultanee).
 [[durable_objects.bindings]]
 name = "COUNTER"
 class_name = "Counter"

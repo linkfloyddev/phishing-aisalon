@@ -1,0 +1,4 @@
+# Stato locale di wrangler/miniflare (wrangler dev) e dipendenze
+.wrangler/
+node_modules/
+dist/
