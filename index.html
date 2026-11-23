@@ -1,0 +1,390 @@
+<!doctype html>
+<!--
+  Simulazione di security awareness. Nessun dato personale raccolto, salvato o trasmesso.
+  Conforme per design (nessun trattamento di dati personali).
+
+  Pagina partecipante. Al submit non viene inviato alcun campo: email e password
+  restano nel browser e vengono scartate. L'unica chiamata di rete e' un POST /hit
+  senza body, che incrementa un contatore anonimo condiviso.
+-->
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="color-scheme" content="light" />
+  <title>WiFi AI Salon · Accesso Guest</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --field: #f8fafc;
+      --brand: #2563eb;
+      --brand-press: #1d4ed8;
+      --brand-ink: #ffffff;
+      --ring: rgba(37, 99, 235, .25);
+      --radius: 16px;
+      --shadow: 0 20px 50px -24px rgba(15, 23, 42, .55);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -10%, #1e293b 0%, var(--bg) 55%);
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(20px, env(safe-area-inset-top)) 18px max(20px, env(safe-area-inset-bottom));
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .head {
+      padding: 26px 24px 20px;
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 14px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 22px -10px rgba(37, 99, 235, .8);
+    }
+    .logo svg { width: 28px; height: 28px; display: block; }
+
+    .title { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+    .sub { margin: 5px 0 0; font-size: 13px; color: var(--muted); }
+
+    .body { padding: 22px 24px 24px; }
+
+    .network {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 13px;
+      margin-bottom: 20px;
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 13px;
+    }
+    .network .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e; flex: none;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, .18);
+    }
+    .network b { font-weight: 600; }
+    .network .ssid { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+    label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #334155;
+      margin: 0 0 6px;
+    }
+
+    .field { margin-bottom: 15px; }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 13px 14px;
+      font-size: 16px; /* >=16px: evita lo zoom automatico su iOS */
+      color: var(--ink);
+      background: var(--field);
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input::placeholder { color: #94a3b8; }
+    input:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px var(--ring);
+      background: #fff;
+    }
+
+    .pw-wrap { position: relative; }
+    .pw-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .pw-toggle:active { background: var(--line); }
+
+    .btn {
+      width: 100%;
+      margin-top: 6px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--brand-ink);
+      background: var(--brand);
+      border: 0;
+      border-radius: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 50px;
+      transition: background .15s, transform .05s;
+      touch-action: manipulation;
+    }
+    .btn:active { background: var(--brand-press); transform: translateY(1px); }
+    .btn:disabled { cursor: default; opacity: .9; }
+
+    .spinner {
+      width: 17px; height: 17px;
+      border: 2.5px solid rgba(255, 255, 255, .4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .fineprint {
+      margin: 16px 0 0;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .foot {
+      padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, .5);
+    }
+
+    /* --- Stato terminale (spinner / errore) --- */
+    .state {
+      padding: 40px 28px;
+      text-align: center;
+      min-height: 230px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .state .big-spin {
+      width: 42px; height: 42px;
+      border: 3.5px solid var(--line);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    .state h2 { margin: 0; font-size: 18px; font-weight: 700; }
+    .state p { margin: 0; font-size: 14px; color: var(--muted); max-width: 260px; }
+    .state .fail-icon {
+      width: 46px; height: 46px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: #fef2f2; color: #dc2626;
+    }
+    .state .fail-icon svg { width: 26px; height: 26px; }
+
+    .hidden { display: none !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner, .big-spin { animation-duration: 1.6s; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card" role="region" aria-label="Accesso rete WiFi">
+
+      <!-- Vista 1: login -->
+      <div id="view-login">
+        <header class="head">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5a10 10 0 0 1 14 0" />
+              <path d="M8.5 15.8a5 5 0 0 1 7 0" />
+              <circle cx="12" cy="19" r="1" fill="#fff" stroke="none" />
+            </svg>
+          </div>
+          <h1 class="title">WiFi AI Salon</h1>
+          <p class="sub">Accesso alla rete ospiti dell'evento</p>
+        </header>
+
+        <div class="body">
+          <div class="network">
+            <span class="dot" aria-hidden="true"></span>
+            <b>Rete rilevata</b>
+            <span class="ssid">Guest WiFi · AI Salon</span>
+          </div>
+
+          <form id="login-form" novalidate autocomplete="off">
+            <div class="field">
+              <label for="email">Indirizzo email</label>
+              <input id="email" name="email" type="email" inputmode="email"
+                     autocomplete="off" autocapitalize="off" spellcheck="false"
+                     placeholder="nome@esempio.ch" required />
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <div class="pw-wrap">
+                <input id="password" name="password" type="password"
+                       autocomplete="off" placeholder="La tua password" required />
+                <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Mostra password">Mostra</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">Connettiti</button>
+
+            <p class="fineprint">
+              Effettuando l'accesso accetti le condizioni d'uso della rete ospiti.
+              La connessione potrebbe essere monitorata.
+            </p>
+          </form>
+        </div>
+      </div>
+
+      <!-- Vista 2: spinner -->
+      <div id="view-loading" class="state hidden" aria-live="polite">
+        <div class="big-spin" aria-hidden="true"></div>
+        <h2>Connessione in corso…</h2>
+        <p>Autenticazione alla rete AI Salon. Attendi qualche istante.</p>
+      </div>
+
+      <!-- Vista 3: errore (anticlimatico, nessun reveal) -->
+      <div id="view-failed" class="state hidden" aria-live="polite">
+        <div class="fail-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v6" />
+            <path d="M12 16.5v.5" />
+          </svg>
+        </div>
+        <h2>Connessione non riuscita</h2>
+        <p>Impossibile completare l'accesso alla rete. Riprova più tardi.</p>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="foot">Rete ospiti · AI Salon</footer>
+
+  <script>
+  (function () {
+    "use strict";
+
+    // === CONFIGURAZIONE ===
+    // Sostituisci con l'URL della tua Cloudflare Worker (senza slash finale).
+    // Esempio: "https://aisalon-counter.tuo-account.workers.dev"
+    var COUNTER_URL = "https://REPLACE-WITH-YOUR-WORKER.workers.dev";
+
+    var form      = document.getElementById("login-form");
+    var btn       = document.getElementById("submit-btn");
+    var viewLogin = document.getElementById("view-login");
+    var viewLoad  = document.getElementById("view-loading");
+    var viewFail  = document.getElementById("view-failed");
+    var pwToggle  = document.getElementById("pw-toggle");
+    var pwInput   = document.getElementById("password");
+
+    // Mostra/nascondi password (puramente locale, nessun dato lascia la pagina).
+    pwToggle.addEventListener("click", function () {
+      var show = pwInput.type === "password";
+      pwInput.type = show ? "text" : "password";
+      pwToggle.textContent = show ? "Nascondi" : "Mostra";
+      pwToggle.setAttribute("aria-label", show ? "Nascondi password" : "Mostra password");
+    });
+
+    // Invia SOLO il segnale "+1". Nessun body, nessun dato utente.
+    // keepalive permette alla richiesta di completarsi anche cambiando vista.
+    function sendHit() {
+      try {
+        fetch(COUNTER_URL + "/hit", {
+          method: "POST",
+          cache: "no-store",
+          keepalive: true
+          // Nessun header, nessun body: non trasmettiamo nulla oltre al colpo.
+        }).catch(function () { /* ignora: il conteggio e' best-effort */ });
+      } catch (e) {
+        /* mai bloccare l'esperienza utente per un errore di rete */
+      }
+    }
+
+    function show(view) {
+      viewLogin.classList.add("hidden");
+      viewLoad.classList.add("hidden");
+      viewFail.classList.add("hidden");
+      view.classList.remove("hidden");
+    }
+
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault(); // le credenziali non vengono MAI inviate
+
+      // Validazione minima lato client (nessun invio dei valori).
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      // I valori dei campi vengono scartati: non li leggiamo, non li salviamo.
+      // Un reset del form rimuove subito email e password dal DOM.
+      btn.disabled = true;
+
+      // Unica chiamata di rete: il "+1" anonimo.
+      sendHit();
+
+      // Scarta immediatamente le credenziali dai campi.
+      form.reset();
+
+      show(viewLoad);
+
+      // Spinner ~2,5s, poi schermata anticlimatica. Nessun reveal qui.
+      setTimeout(function () {
+        show(viewFail);
+      }, 2500);
+    });
+  })();
+  </script>
+</body>
+</html>

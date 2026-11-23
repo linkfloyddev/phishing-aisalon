@@ -1,0 +1,18 @@
+# Simulazione di security awareness. Nessun dato personale raccolto, salvato o trasmesso.
+# Conforme per design (nessun trattamento di dati personali).
+#
+# Configurazione d'esempio per la Cloudflare Worker del contatore anonimo.
+
+name = "aisalon-counter"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Il contatore globale e' tenuto da un Durable Object (stato atomico e consistente).
+[[durable_objects.bindings]]
+name = "COUNTER"
+class_name = "Counter"
+
+# Migrazione necessaria la prima volta che si crea la classe Durable Object.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Counter"]

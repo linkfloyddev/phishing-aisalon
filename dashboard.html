@@ -1,0 +1,196 @@
+<!doctype html>
+<!--
+  Simulazione di security awareness. Nessun dato personale raccolto, salvato o trasmesso.
+  Conforme per design (nessun trattamento di dati personali).
+
+  Pagina di proiezione per il palco. Fa polling su GET /count ogni ~2,5s e mostra
+  il numero di persone che hanno inserito le proprie credenziali. Nessun dato
+  personale e' disponibile: il backend conosce solo il conteggio.
+-->
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="color-scheme" content="dark" />
+  <title>AI Salon · Guardie e Ladri</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --ink: #f8fafc;
+      --muted: #8b93a7;
+      --alert: #ef4444;
+      --alert-glow: rgba(239, 68, 68, .55);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+
+    body {
+      background:
+        radial-gradient(90vw 70vh at 50% 42%, #1a0d10 0%, var(--bg) 70%);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4vmin;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 1.4vmin;
+      font-size: clamp(14px, 2.3vmin, 26px);
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--alert);
+      margin-bottom: 4vmin;
+    }
+    .kicker .pulse {
+      width: 1.4vmin; height: 1.4vmin; min-width: 10px; min-height: 10px;
+      border-radius: 50%;
+      background: var(--alert);
+      box-shadow: 0 0 0 0 var(--alert-glow);
+      animation: ping 1.8s cubic-bezier(0, 0, .2, 1) infinite;
+    }
+    @keyframes ping {
+      0%   { box-shadow: 0 0 0 0 var(--alert-glow); }
+      70%  { box-shadow: 0 0 0 2.2vmin rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .count {
+      font-size: clamp(120px, 42vmin, 620px);
+      font-weight: 900;
+      line-height: .9;
+      letter-spacing: -.04em;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(180deg, #fff 0%, #ffd9d9 55%, #ff7a7a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 14vmin rgba(239, 68, 68, .25);
+      transition: transform .25s ease;
+    }
+    .count.bump { transform: scale(1.06); }
+
+    .caption {
+      margin-top: 3vmin;
+      font-size: clamp(18px, 3.6vmin, 46px);
+      font-weight: 600;
+      color: var(--ink);
+      max-width: 22ch;
+    }
+    .sub {
+      margin-top: 1.6vmin;
+      font-size: clamp(13px, 1.9vmin, 24px);
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .status {
+      position: fixed;
+      bottom: 3vmin;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 1vmin;
+      font-size: clamp(11px, 1.5vmin, 18px);
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+    .status .dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #22c55e; transition: background .3s;
+    }
+    .status.stale .dot { background: #f59e0b; }
+    .status.error .dot { background: var(--alert); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .kicker .pulse { animation: none; }
+      .count { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="kicker">
+    <span class="pulse" aria-hidden="true"></span>
+    Guardie e Ladri · Live
+  </div>
+
+  <div class="count" id="count" aria-live="polite">—</div>
+
+  <div class="caption">persone hanno inserito le proprie credenziali</div>
+  <div class="sub">su una rete WiFi che non avevano mai verificato</div>
+
+  <div class="status" id="status">
+    <span class="dot" aria-hidden="true"></span>
+    <span id="status-text">Connessione…</span>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    // === CONFIGURAZIONE ===
+    // Stesso URL della Worker usato in index.html (senza slash finale).
+    var COUNTER_URL = "https://REPLACE-WITH-YOUR-WORKER.workers.dev";
+
+    var POLL_MS = 2500;
+
+    var elCount  = document.getElementById("count");
+    var elStatus = document.getElementById("status");
+    var elText   = document.getElementById("status-text");
+
+    var current = null;
+
+    function setStatus(cls, text) {
+      elStatus.className = "status" + (cls ? " " + cls : "");
+      elText.textContent = text;
+    }
+
+    function render(n) {
+      if (n === current) return;
+      current = n;
+      elCount.textContent = String(n);
+      // Micro-animazione a ogni cambio, per far "scattare" il numero sul palco.
+      elCount.classList.remove("bump");
+      void elCount.offsetWidth; // forza il reflow per riavviare l'animazione
+      elCount.classList.add("bump");
+    }
+
+    function poll() {
+      fetch(COUNTER_URL + "/count", { cache: "no-store" })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          render(typeof data.count === "number" ? data.count : 0);
+          setStatus("", "In diretta");
+        })
+        .catch(function () {
+          // Manteniamo l'ultimo valore mostrato; segnaliamo solo lo stato.
+          if (current === null) {
+            elCount.textContent = "—";
+            setStatus("error", "Nessuna connessione al contatore");
+          } else {
+            setStatus("stale", "Riconnessione…");
+          }
+        });
+    }
+
+    poll();
+    setInterval(poll, POLL_MS);
+  })();
+  </script>
+</body>
+</html>
